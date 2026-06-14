@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring Isian Nomor HP dan Rekening Mitra</title>
+  <style>
+    /* CSS TEMA ORANYE ADVANCED */
+    :root {
+      --primary-orange: #f97316;
+      --light-orange: #ffedd5;
+      --dark-orange: #c2410c;
+      --hover-orange: #fdba74;
+      --success-green: #22c55e;
+      --light-green: #dcfce7;
+    }
+    
+    * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--light-orange); margin: 0; padding: 20px; color: #333; }
+    .container { max-width: 1000px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.15); border-top: 6px solid var(--primary-orange); }
+    h2 { color: var(--dark-orange); text-align: center; margin-bottom: 25px; }
+    
+    .info-box { background-color: #fff7ed; border-left: 5px solid var(--primary-orange); padding: 15px 20px; margin-bottom: 15px; border-radius: 4px; font-size: 15px; line-height: 1.6; }
+    .info-box.success { background-color: var(--light-green); border-left-color: var(--success-green); }
+    .info-box a { display: inline-block; margin-top: 8px; color: #ffffff; background-color: var(--primary-orange); padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s ease; }
+    .info-box a:hover { background-color: var(--dark-orange); }
+
+    .btn-cek { background-color: var(--success-green); color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.3s; margin-left: 10px; }
+    .btn-cek:hover { background-color: #16a34a; }
+    
+    .filter-container { margin-bottom: 20px; margin-top: 25px; display: flex; align-items: center; gap: 15px; }
+    .filter-container label { font-weight: bold; color: var(--dark-orange); }
+    select, .modal-input { padding: 10px; border: 2px solid var(--hover-orange); border-radius: 6px; font-size: 15px; outline: none; cursor: pointer; }
+    .modal-input { width: 100%; margin: 10px 0; }
+    select:focus, .modal-input:focus { border-color: var(--primary-orange); }
+    
+    .table-responsive { overflow-x: auto; }
+    table.main-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table.main-table th, table.main-table td { border: 1px solid #e5e7eb; padding: 12px 15px; text-align: left; }
+    table.main-table th { background-color: var(--primary-orange); color: white; font-weight: 600; }
+
+    .row-belum { background-color: #fee2e2 !important; }
+    .row-sudah { background-color: #dcfce7 !important; }
+    .badge-belum { display: inline-block; background-color: #ef4444; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; margin-top: 5px; font-weight: bold; }
+    .badge-sudah { display: inline-block; background-color: #22c55e; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; margin-top: 5px; font-weight: bold; }
+    
+    .loader { text-align: center; font-size: 18px; color: var(--primary-orange); margin: 40px 0; font-weight: bold; }
+
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+    .modal-content { background-color: #fefefe; margin: 5% auto; padding: 25px 30px; border-radius: 12px; width: 90%; max-width: 550px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); border-top: 5px solid var(--primary-orange); }
+    .close-modal { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1; }
+    .close-modal:hover { color: #333; }
+    .btn-submit { background-color: var(--primary-orange); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; margin-top: 10px; }
+    .btn-submit:hover { background-color: var(--dark-orange); }
+    
+    .table-result { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+    .table-result th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #ddd; color: #555; width: 40%; }
+    .table-result td { padding: 8px 10px; border-bottom: 1px solid #ddd; font-weight: 600; color: #111; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Monitoring Isian Rekening Mitra</h2>
+    
+    <div class="info-box">
+      Mohon periksa kembali status pengisian data Mitra pada tabel di bawah. Bagi yang barisnya berwarna <strong>merah (Belum)</strong>, harap segera melengkapi data Nomor HP (untuk pengisian pulsa) dan Rekening melalui tautan berikut:<br>
+      <a href="https://s.bps.go.id/rekeningmitrase26_lobar" target="_blank">🔗 https://s.bps.go.id/rekeningmitrase26_lobar</a>
+    </div>
+
+    <div class="info-box success">
+      Untuk yang sudah mengisi, silahkan untuk melakukan pengecekan ulang pada nomor rekening dan nomor HP yang diinput,
+      <button class="btn-cek" onclick="openModal()">🔍 Klik Cek</button>
+    </div>
+
+    <div id="loading" class="loader">
+      ⏳ Sedang mengambil data dari Spreadsheet...
+    </div>
+
+    <div id="content" style="display: none;">
+      <div class="filter-container">
+        <label for="filterKelas">Filter per Kelas:</label>
+        <select id="filterKelas" onchange="renderTable()">
+          <option value="Semua">Tampilkan Semua Kelas</option>
+        </select>
+      </div>
+
+      <div class="table-responsive">
+        <table class="main-table" id="dataTable">
+          <thead>
+            <tr>
+              <th width="5%">No</th>
+              <th width="25%">Nama Mitra</th>
+              <th width="15%">Kelas</th>
+              <th width="15%">Mitra</th>
+              <th width="20%">Kedudukan</th>
+              <th width="20%">Alamat</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="searchModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal()">&times;</span>
+      <h3 style="color:var(--dark-orange); margin-top:0;">Cek Data Isian Saya</h3>
+      
+      <div id="modalForm">
+        <label style="font-weight:bold; color:#555;">Silahkan pilih Nama Anda:</label>
+        <select id="inputNama" class="modal-input">
+          <option value="">-- Pilih Nama Mitra --</option>
+        </select>
+        
+        <button class="btn-submit" onclick="prosesCari()">Cari Data</button>
+        
+        <div id="modalLoading" style="display:none; color:var(--primary-orange); text-align:center; margin-top:15px; font-weight:bold;">
+          ⏳ Mencari data ke database...
+        </div>
+        <div id="modalError" style="display:none; color:#ef4444; background:#fee2e2; padding:10px; border-radius:5px; margin-top:15px; font-size:14px;"></div>
+      </div>
+
+      <div id="modalResult" style="display:none;">
+        <table class="table-result" id="tabelDetailData"></table>
+        <div style="background:#fff7ed; padding:12px; border-left:4px solid #ef4444; font-size:13px; margin-top:20px; border-radius:4px; line-height:1.5;">
+          <strong>Perhatian:</strong> Jika ada kesalahan pada data di atas, silahkan lakukan pengisian ulang pada link:<br>
+          <a href="https://s.bps.go.id/rekeningmitrase26_lobar" target="_blank" style="color:var(--primary-orange); font-weight:bold; display:inline-block; margin-top:5px; text-decoration:none;">🔗 https://s.bps.go.id/rekeningmitrase26_lobar</a>
+        </div>
+        <button class="btn-submit" style="background-color:#6b7280; margin-top:15px;" onclick="ulangiPencarian()">Cari Nama Lain</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // URL API yang sudah terisi sesuai permintaan Anda
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwitemy4-Gkhu8Op2r22UIUNwLxTy63sG2UhcIyQ7E6GnK9unmRRoWEgoxRB6Cd9Kc6Xw/exec";
+
+    let allMitraData = [];
+
+    document.addEventListener("DOMContentLoaded", function() {
+       fetch(`${APP_SCRIPT_URL}?action=getAll`)
+         .then(response => response.json())
+         .then(data => {
+            if(data.status === 'success') {
+              onSuccess(data.data);
+            } else {
+              onFailure(new Error(data.message));
+            }
+         })
+         .catch(error => onFailure(error));
+    });
+
+    function onSuccess(data) {
+      allMitraData = data; 
+      
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+
+      const kelasSet = new Set();
+      allMitraData.forEach(item => {
+        if(item.kelas && item.kelas !== "-") kelasSet.add(item.kelas.toString().trim());
+      });
+
+      const selectKelas = document.getElementById('filterKelas');
+      Array.from(kelasSet).sort().forEach(kelas => {
+         let option = document.createElement('option');
+         option.value = kelas;
+         option.innerHTML = kelas;
+         selectKelas.appendChild(option);
+      });
+
+      const selectNama = document.getElementById('inputNama');
+      const namaSet = new Set();
+      allMitraData.forEach(item => {
+        if(item.nama && item.nama !== "-") namaSet.add(item.nama.toString().trim());
+      });
+      
+      Array.from(namaSet).sort().forEach(nama => {
+         let option = document.createElement('option');
+         option.value = nama;
+         option.innerHTML = nama;
+         selectNama.appendChild(option);
+      });
+
+      renderTable();
+    }
+
+    function onFailure(error) {
+      document.getElementById('loading').innerHTML = '❌ Gagal memuat data utama: ' + error.message;
+      document.getElementById('loading').style.color = 'red';
+    }
+
+    function renderTable() {
+      const selectedKelas = document.getElementById('filterKelas').value;
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = ''; 
+
+      let filteredData = allMitraData;
+      if (selectedKelas !== 'Semua') {
+         filteredData = allMitraData.filter(item => item.kelas === selectedKelas);
+      }
+
+      filteredData.sort((a, b) => {
+         if (a.status === 'Belum' && b.status !== 'Belum') return -1;
+         if (a.status !== 'Belum' && b.status === 'Belum') return 1;
+         return 0; 
+      });
+
+      filteredData.forEach((item, index) => {
+         let rowClass = item.status === 'Belum' ? 'row-belum' : 'row-sudah';
+         let badgeClass = item.status === 'Belum' ? 'badge-belum' : 'badge-sudah';
+         let statusText = item.status === 'Belum' ? 'Belum Isi' : 'Sudah Isi';
+
+         let tr = document.createElement('tr');
+         tr.className = rowClass;
+         tr.innerHTML = `
+           <td>${index + 1}</td>
+           <td>
+             <strong>${item.nama}</strong><br>
+             <span class="${badgeClass}">${statusText}</span>
+           </td>
+           <td><span style="background:rgba(255,255,255,0.6); padding:3px 8px; border-radius:12px; font-size:13px; color:#c2410c; border: 1px solid #fdba74;">${item.kelas}</span></td>
+           <td>${item.mitra}</td>
+           <td>${item.kedudukan}</td>
+           <td>${item.alamat}</td>
+         `;
+         tbody.appendChild(tr);
+      });
+    }
+
+    const modal = document.getElementById("searchModal");
+
+    function openModal() {
+      modal.style.display = "block";
+      ulangiPencarian();
+    }
+
+    function closeModal() {
+      modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) closeModal();
+    }
+
+    function ulangiPencarian() {
+      document.getElementById('inputNama').value = "";
+      document.getElementById('modalForm').style.display = "block";
+      document.getElementById('modalResult').style.display = "none";
+      document.getElementById('modalError').style.display = "none";
+    }
+
+    function prosesCari() {
+      const nama = document.getElementById('inputNama').value;
+      if(nama === "") {
+        tampilError("Mohon pilih Nama Mitra terlebih dahulu.");
+        return;
+      }
+
+      document.getElementById('modalError').style.display = "none";
+      document.getElementById('modalLoading').style.display = "block";
+
+      fetch(`${APP_SCRIPT_URL}?action=check&nama=${encodeURIComponent(nama)}`)
+        .then(response => response.json())
+        .then(data => {
+           if(data.status === 'success') {
+             suksesCari(data.data);
+           } else {
+             gagalCari(new Error(data.message));
+           }
+        })
+        .catch(error => gagalCari(error));
+    }
+
+    function suksesCari(dataDetail) {
+      document.getElementById('modalLoading').style.display = "none";
+      
+      if(!dataDetail) {
+        tampilError("Data isian Anda belum ditemukan di database. Pastikan Anda sudah mengisi form.");
+        return;
+      }
+
+      document.getElementById('modalForm').style.display = "none";
+      
+      const tabelHTML = `
+        <tr><th>Nama Mitra</th><td style="color:var(--dark-orange); font-size:16px;">${dataDetail.nama}</td></tr>
+        <tr><th>Mitra</th><td>${dataDetail.mitra}</td></tr>
+        <tr><th>Asal Kecamatan</th><td>${dataDetail.kecamatan}</td></tr>
+        <tr><th>Kelas Pelatihan</th><td>${dataDetail.kelas}</td></tr>
+        <tr><th>Nomor Telpon</th><td style="color:#2563eb;">${dataDetail.telp}</td></tr>
+        <tr><th>Operator</th><td>${dataDetail.operator}</td></tr>
+        <tr><th>Prabayar</th><td>${dataDetail.prabayar}</td></tr>
+        <tr><th>No Rekening</th><td style="color:#2563eb;">${dataDetail.rekening}</td></tr>
+        <tr><th>Nama Pada Rekening</th><td>${dataDetail.namaRek}</td></tr>
+        <tr><th>Bank</th><td>${dataDetail.bank}</td></tr>
+      `;
+      
+      document.getElementById('tabelDetailData').innerHTML = tabelHTML;
+      document.getElementById('modalResult').style.display = "block";
+    }
+
+    function gagalCari(err) {
+      document.getElementById('modalLoading').style.display = "none";
+      tampilError("Sistem Error: " + err.message);
+    }
+
+    function tampilError(pesan) {
+      const errBox = document.getElementById('modalError');
+      errBox.innerHTML = "❌ " + pesan;
+      errBox.style.display = "block";
+    }
+  </script>
+</body>
+</html>
