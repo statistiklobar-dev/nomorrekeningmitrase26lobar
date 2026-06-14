@@ -37,7 +37,7 @@
     .table-responsive { overflow-x: auto; }
     table.main-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     table.main-table th, table.main-table td { border: 1px solid #e5e7eb; padding: 12px 15px; text-align: left; }
-    table.main-table th { background-color: var(--primary-orange); color: white; font-weight: 600; }
+    table.main-table th { background-color: var(--primary-orange); color: white; font-weight: 600; white-space: nowrap; }
 
     .row-belum { background-color: #fee2e2 !important; }
     .row-sudah { background-color: #dcfce7 !important; }
@@ -56,6 +56,20 @@
     .table-result { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
     .table-result th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #ddd; color: #555; width: 40%; }
     .table-result td { padding: 8px 10px; border-bottom: 1px solid #ddd; font-weight: 600; color: #111; }
+
+    /* --- PENYESUAIAN KHUSUS UNTUK TAMPILAN HP (MOBILE RESPONSIVE) --- */
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      .container { padding: 15px; }
+      h2 { font-size: 20px; }
+      .filter-container { flex-direction: column; align-items: flex-start; gap: 8px; }
+      select { width: 100%; min-width: 100%; }
+      .btn-cek { margin-left: 0; margin-top: 10px; display: block; width: 100%; text-align: center; }
+      .modal-content { padding: 20px 15px; margin: 15% auto; }
+      table.main-table th, table.main-table td { padding: 10px; font-size: 14px; }
+      .table-result th, .table-result td { padding: 6px 8px; font-size: 13px; }
+      .table-result th { width: 45%; }
+    }
   </style>
 </head>
 <body>
@@ -63,14 +77,14 @@
   <div class="container">
     <h2>Monitoring Isian Rekening Mitra</h2>
     
-    <div class="info-box">
-      Mohon periksa kembali status pengisian data Mitra pada tabel di bawah. Bagi yang barisnya berwarna <strong>merah (Belum)</strong>, harap segera melengkapi data Nomor HP (untuk pengisian pulsa) dan Rekening melalui tautan berikut:<br>
-      <a href="https://s.bps.go.id/rekeningmitrase26_lobar" target="_blank">🔗 https://s.bps.go.id/rekeningmitrase26_lobar</a>
-    </div>
-
     <div class="info-box success">
       Untuk yang sudah mengisi, silahkan untuk melakukan pengecekan ulang pada nomor rekening dan nomor HP yang diinput,
       <button class="btn-cek" onclick="openModal()">🔍 Klik Cek</button>
+    </div>
+
+    <div class="info-box">
+      Mohon periksa kembali status pengisian data Mitra pada tabel di bawah. Bagi yang barisnya berwarna <strong>merah (Belum)</strong>, harap segera melengkapi data Nomor HP (untuk pengisian pulsa) dan Rekening melalui tautan berikut:<br>
+      <a href="https://s.bps.go.id/rekeningmitrase26_lobar" target="_blank">🔗 https://s.bps.go.id/rekeningmitrase26_lobar</a>
     </div>
 
     <div id="loading" class="loader">
@@ -134,7 +148,6 @@
   </div>
 
   <script>
-    // URL API yang sudah terisi sesuai permintaan Anda
     const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwitemy4-Gkhu8Op2r22UIUNwLxTy63sG2UhcIyQ7E6GnK9unmRRoWEgoxRB6Cd9Kc6Xw/exec";
 
     let allMitraData = [];
