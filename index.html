@@ -219,17 +219,47 @@
          filteredData = allMitraData.filter(item => item.kelas === selectedKelas);
       }
 
-      // Mengurutkan: Belum (Atas) -> Bukan Prabayar (Tengah) -> Sudah (Bawah)
+      // Mengurutkan Prioritas: Merah (Atas) -> Kuning (Tengah) -> Hijau (Bawah)
       filteredData.sort((a, b) => {
-         const urutan = { 'Belum': 1, 'Bukan Prabayar': 2, 'Sudah': 3 };
-         return urutan[a.status] - urutan[b.status];
+         const getPrioritas = (item) => {
+             if (item.status === 'Sudah' && item.statusBukti === 'Sudah') return 3; // Hijau
+             if (item.status === 'Bukan Prabayar' && item.statusBukti === 'Sudah') return 2; // Kuning
+             return 1; // Merah (Jika ada yang belum)
+         };
+         return getPrioritas(a) - getPrioritas(b);
       });
 
       filteredData.forEach((item, index) => {
-         // Menentukan warna baris dan badge berdasarkan 3 status
-         let rowClass = item.status === 'Belum' ? 'row-belum' : (item.status === 'Bukan Prabayar' ? 'row-kuning' : 'row-sudah');
-         let badgeClass = item.status === 'Belum' ? 'badge-belum' : (item.status === 'Bukan Prabayar' ? 'badge-kuning' : 'badge-sudah');
-         let statusText = item.status === 'Belum' ? 'Belum Isi' : (item.status === 'Bukan Prabayar' ? 'Sudah Isi (Bukan Prabayar)' : 'Sudah Isi');
+         let rowClass = '';
+         let badgeClass = '';
+         let statusText = '';
+
+         // === LOGIKA PENENTUAN STATUS (SESUAI REQUEST) ===
+         if (item.status === 'Belum' && item.statusBukti === 'Belum') {
+             statusText = 'Belum Isi Rekening dan No HP serta Bukti Pulsa';
+             rowClass = 'row-belum'; badgeClass = 'badge-belum';
+         } 
+         else if (item.status === 'Sudah' && item.statusBukti === 'Belum') {
+             statusText = 'Sudah Isi Rekening dan No HP tapi Belum Isi Bukti Pulsa';
+             rowClass = 'row-belum'; badgeClass = 'badge-belum';
+         } 
+         else if (item.status === 'Sudah' && item.statusBukti === 'Sudah') {
+             statusText = 'Sudah Isi Rekening dan No HP serta Bukti Pulsa';
+             rowClass = 'row-sudah'; badgeClass = 'badge-sudah';
+         } 
+         else if (item.status === 'Bukan Prabayar' && item.statusBukti === 'Belum') {
+             statusText = 'Sudah Isi (Bukan Prabayar) tetapi belum isi bukti pulsa';
+             rowClass = 'row-belum'; badgeClass = 'badge-belum';
+         } 
+         else if (item.status === 'Bukan Prabayar' && item.statusBukti === 'Sudah') {
+             statusText = 'Sudah Isi (Bukan Prabayar)';
+             rowClass = 'row-kuning'; badgeClass = 'badge-kuning';
+         } 
+         else {
+             // Kondisi Fallback jika Rekening Belum, tapi Bukti Sudah
+             statusText = 'Belum Isi Rekening dan No HP (Sudah Bukti Pulsa)';
+             rowClass = 'row-belum'; badgeClass = 'badge-belum';
+         }
 
          let tr = document.createElement('tr');
          tr.className = rowClass;
