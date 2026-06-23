@@ -28,7 +28,8 @@
     .btn-cek { background-color: var(--success-green); color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.3s; margin-left: 10px; }
     .btn-cek:hover { background-color: #16a34a; }
     
-    .filter-container { margin-bottom: 20px; margin-top: 25px; display: flex; align-items: center; gap: 15px; }
+    .filter-container { margin-bottom: 20px; margin-top: 25px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .filter-container .filter-group { display: flex; align-items: center; gap: 8px; }
     .filter-container label { font-weight: bold; color: var(--dark-orange); }
     select, .modal-input { padding: 10px; border: 2px solid var(--hover-orange); border-radius: 6px; font-size: 15px; outline: none; cursor: pointer; }
     .modal-input { width: 100%; margin: 10px 0; }
@@ -66,7 +67,8 @@
       body { padding: 10px; }
       .container { padding: 15px; }
       h2 { font-size: 20px; }
-      .filter-container { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .filter-container { flex-direction: column; align-items: flex-start; gap: 15px; }
+      .filter-group { width: 100%; flex-direction: column; align-items: flex-start; gap: 5px; }
       select { width: 100%; min-width: 100%; }
       .btn-cek { margin-left: 0; margin-top: 10px; display: block; width: 100%; text-align: center; }
       .modal-content { padding: 20px 15px; margin: 15% auto; }
@@ -97,10 +99,19 @@
 
     <div id="content" style="display: none;">
       <div class="filter-container">
-        <label for="filterKelas">Filter per Kelas:</label>
-        <select id="filterKelas" onchange="renderTable()">
-          <option value="Semua">Tampilkan Semua Kelas</option>
-        </select>
+        <div class="filter-group">
+          <label for="filterKecamatan">Filter Kecamatan:</label>
+          <select id="filterKecamatan" onchange="renderTable()">
+            <option value="Semua">Tampilkan Semua Kecamatan</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filterKelas">Filter Kelas:</label>
+          <select id="filterKelas" onchange="renderTable()">
+            <option value="Semua">Tampilkan Semua Kelas</option>
+          </select>
+        </div>
       </div>
 
       <div class="table-responsive">
@@ -175,6 +186,7 @@
       document.getElementById('loading').style.display = 'none';
       document.getElementById('content').style.display = 'block';
 
+      // 1. Populasi Dropdown Kelas
       const kelasSet = new Set();
       allMitraData.forEach(item => {
         if(item.kelas && item.kelas !== "-") kelasSet.add(item.kelas.toString().trim());
@@ -188,6 +200,21 @@
          selectKelas.appendChild(option);
       });
 
+      // 2. Populasi Dropdown Kecamatan
+      const kecamatanSet = new Set();
+      allMitraData.forEach(item => {
+        if(item.kecamatan && item.kecamatan !== "-") kecamatanSet.add(item.kecamatan.toString().trim());
+      });
+
+      const selectKecamatan = document.getElementById('filterKecamatan');
+      Array.from(kecamatanSet).sort().forEach(kec => {
+         let option = document.createElement('option');
+         option.value = kec;
+         option.innerHTML = kec;
+         selectKecamatan.appendChild(option);
+      });
+
+      // 3. Populasi Dropdown Nama (untuk modal Cek)
       const selectNama = document.getElementById('inputNama');
       const namaSet = new Set();
       allMitraData.forEach(item => {
@@ -210,13 +237,21 @@
     }
 
     function renderTable() {
+      const selectedKecamatan = document.getElementById('filterKecamatan').value;
       const selectedKelas = document.getElementById('filterKelas').value;
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = ''; 
 
       let filteredData = allMitraData;
+      
+      // Filter berdasarkan Kecamatan (jika bukan "Semua")
+      if (selectedKecamatan !== 'Semua') {
+         filteredData = filteredData.filter(item => item.kecamatan === selectedKecamatan);
+      }
+
+      // Filter berdasarkan Kelas (jika bukan "Semua")
       if (selectedKelas !== 'Semua') {
-         filteredData = allMitraData.filter(item => item.kelas === selectedKelas);
+         filteredData = filteredData.filter(item => item.kelas === selectedKelas);
       }
 
       // Mengurutkan Prioritas: Merah (Atas) -> Kuning (Tengah) -> Hijau (Bawah)
@@ -234,7 +269,7 @@
          let badgeClass = '';
          let statusText = '';
 
-         // === LOGIKA PENENTUAN STATUS (SESUAI REQUEST) ===
+         // === LOGIKA PENENTUAN STATUS (SESUAI REQUEST SEBELUMNYA) ===
          if (item.status === 'Belum' && item.statusBukti === 'Belum') {
              statusText = 'Belum Isi Rekening dan No HP serta Bukti Pulsa';
              rowClass = 'row-belum'; badgeClass = 'badge-belum';
