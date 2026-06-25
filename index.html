@@ -31,14 +31,28 @@
     .filter-container { margin-bottom: 20px; margin-top: 25px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
     .filter-container .filter-group { display: flex; align-items: center; gap: 8px; }
     .filter-container label { font-weight: bold; color: var(--dark-orange); }
-    select, .modal-input { padding: 10px; border: 2px solid var(--hover-orange); border-radius: 6px; font-size: 15px; outline: none; cursor: pointer; }
+    select, input[type="text"].search-input, .modal-input { padding: 10px; border: 2px solid var(--hover-orange); border-radius: 6px; font-size: 15px; outline: none; }
+    select { cursor: pointer; }
     .modal-input { width: 100%; margin: 10px 0; }
-    select:focus, .modal-input:focus { border-color: var(--primary-orange); }
+    select:focus, input[type="text"].search-input:focus, .modal-input:focus { border-color: var(--primary-orange); }
     
-    .table-responsive { overflow-x: auto; }
-    table.main-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    /* PENGATURAN FREEZE HEADER & TABEL RESPONSIVE */
+    .table-responsive { overflow-x: auto; max-height: 500px; overflow-y: auto; }
+    table.main-table { width: 100%; border-collapse: collapse; margin-top: 0; }
     table.main-table th, table.main-table td { border: 1px solid #e5e7eb; padding: 12px 15px; text-align: left; }
-    table.main-table th { background-color: var(--primary-orange); color: white; font-weight: 600; white-space: nowrap; }
+    table.main-table th { 
+      background-color: var(--primary-orange); 
+      color: white; 
+      font-weight: 600; 
+      white-space: nowrap; 
+      position: sticky; 
+      top: 0; 
+      z-index: 10; 
+    }
+
+    /* BARIS TABEL BISA DIKLIK */
+    table.main-table tbody tr { transition: background-color 0.2s, transform 0.1s; cursor: pointer; }
+    table.main-table tbody tr:hover { filter: brightness(0.95); transform: scale(1.005); }
 
     /* PEWARNAAN BARIS DAN BADGE */
     .row-belum { background-color: #fee2e2 !important; } /* Merah Muda */
@@ -69,7 +83,7 @@
       h2 { font-size: 20px; }
       .filter-container { flex-direction: column; align-items: flex-start; gap: 15px; }
       .filter-group { width: 100%; flex-direction: column; align-items: flex-start; gap: 5px; }
-      select { width: 100%; min-width: 100%; }
+      select, input[type="text"].search-input { width: 100%; min-width: 100%; }
       .btn-cek { margin-left: 0; margin-top: 10px; display: block; width: 100%; text-align: center; }
       .modal-content { padding: 20px 15px; margin: 15% auto; }
       table.main-table th, table.main-table td { padding: 10px; font-size: 14px; }
@@ -91,6 +105,9 @@
     <div class="info-box">
       Mohon periksa kembali status pengisian data Mitra pada tabel di bawah. Bagi yang barisnya berwarna <strong>merah (Belum)</strong>, harap segera melengkapi data Nomor HP (untuk pengisian pulsa) dan Rekening melalui tautan berikut:<br>
       <a href="https://s.bps.go.id/rekeningmitrase26_lobar" target="_blank">🔗 https://s.bps.go.id/rekeningmitrase26_lobar</a>
+      <br><br>
+      Bagi yang belum mengisi Bukti Pulsa, silahkan mengisi pada tautan berikut:<br>
+      <a href="https://s.bps.go.id/buktipulsase26" target="_blank">🔗 https://s.bps.go.id/buktipulsase26</a>
     </div>
 
     <div id="loading" class="loader">
@@ -111,6 +128,11 @@
           <select id="filterKelas" onchange="renderTable()">
             <option value="Semua">Tampilkan Semua Kelas</option>
           </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="searchInput">Cari:</label>
+          <input type="text" id="searchInput" class="search-input" placeholder="Ketik nama/mitra..." onkeyup="renderTable()">
         </div>
       </div>
 
@@ -239,6 +261,7 @@
     function renderTable() {
       const selectedKecamatan = document.getElementById('filterKecamatan').value;
       const selectedKelas = document.getElementById('filterKelas').value;
+      const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = ''; 
 
@@ -252,6 +275,16 @@
       // Filter berdasarkan Kelas (jika bukan "Semua")
       if (selectedKelas !== 'Semua') {
          filteredData = filteredData.filter(item => item.kelas === selectedKelas);
+      }
+
+      // Filter berdasarkan Input Cari (Keyword)
+      if (searchKeyword !== '') {
+         filteredData = filteredData.filter(item => 
+           item.nama.toLowerCase().includes(searchKeyword) ||
+           item.mitra.toLowerCase().includes(searchKeyword) ||
+           item.kedudukan.toLowerCase().includes(searchKeyword) ||
+           item.alamat.toLowerCase().includes(searchKeyword)
+         );
       }
 
       // Mengurutkan Prioritas: Merah (Atas) -> Kuning (Tengah) -> Hijau (Bawah)
@@ -269,7 +302,7 @@
          let badgeClass = '';
          let statusText = '';
 
-         // === LOGIKA PENENTUAN STATUS (SESUAI REQUEST SEBELUMNYA) ===
+         // === LOGIKA PENENTUAN STATUS ===
          if (item.status === 'Belum' && item.statusBukti === 'Belum') {
              statusText = 'Belum Isi Rekening dan No HP serta Bukti Pulsa';
              rowClass = 'row-belum'; badgeClass = 'badge-belum';
@@ -298,6 +331,13 @@
 
          let tr = document.createElement('tr');
          tr.className = rowClass;
+         tr.title = "Klik untuk cek data isian: " + item.nama; // Tambahan tooltip
+         
+         // Event onclick untuk membuka modal saat baris diklik
+         tr.onclick = function() {
+            openModalForRow(item.nama);
+         };
+
          tr.innerHTML = `
            <td>${index + 1}</td>
            <td>
@@ -318,6 +358,20 @@
     function openModal() {
       modal.style.display = "block";
       ulangiPencarian();
+    }
+
+    // Fungsi khusus saat mengklik baris pada tabel
+    function openModalForRow(namaMitra) {
+      modal.style.display = "block";
+      ulangiPencarian();
+      
+      // Auto pilih nama sesuai dengan baris yang diklik
+      document.getElementById('inputNama').value = namaMitra;
+      
+      // Langsung eksekusi pencarian
+      if(document.getElementById('inputNama').value !== "") {
+         prosesCari();
+      }
     }
 
     function closeModal() {
